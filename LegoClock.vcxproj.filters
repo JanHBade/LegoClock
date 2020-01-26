@@ -21,10 +21,10 @@
     <ClInclude Include="__vm\.LegoClock.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Documents\Arduino\Test1\ESP32_RMT_Driver.h">
+    <ClInclude Include="HTTPUpdateServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HTTPUpdateServer.h">
+    <ClInclude Include="ESP32_RMT_Driver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

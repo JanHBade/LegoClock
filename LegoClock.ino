@@ -5,20 +5,24 @@
 */
 
 
-#include "HTTPUpdateServer.h"
-#include <PageStream.h>
-#include <PageBuilder.h>
 #include <Wire.h>
 #include <WiFi.h>
 #include <time.h>
+
 #define NO_ADAFRUIT_SSD1306_COLOR_COMPATIBILITY
-#include <Adafruit_SSD1306.h>
+
 #include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <Fonts/FreeSans12pt7b.h>
 #include <Fonts/FreeSansBold24pt7b.h>
+
 #include <WS2812FX.h>
+
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+
+#include <PageStream.h>
+#include <PageBuilder.h>
 #include <AutoConnect.h>
 
 #include "HTTPUpdateServer.h"
@@ -48,7 +52,7 @@ AutoConnectAux RootPage(ROOT_PAGE, "Startseite", false, {
 
 AutoConnectSelect modus("Modus", { }, "LED Modus");
 ACInput(farbe, "", "Farbe (Hex) RGB", "^[a-fA-F0-9]{6}$");
-ACCheckbox(autofarbe, "AutoFarbe", "Auto. Farbwechsel");
+ACCheckbox(autofarbe, "AutoFarbe", "Auto. Farbwechsel",true);
 ACInput(speed, "200", "Geschwindigkeit", "^[0-9]{1,}$");
 ACInput(brightness, "100", "Helligkeit", "^[0-9]{1,}$");
 ACSubmit(save, "&#220;bernehmen", AUX_SETTING_SAVE);
@@ -235,6 +239,7 @@ void setup()
         
     config.hostName = HOSTNAME;
     config.retainPortal = true;
+    config.immediateStart = true;
     config.ticker = true;
     Portal.config(config);
 
@@ -387,50 +392,67 @@ void loop()
 	display.setTextSize(1);
 	display.setCursor(0, 0);
 
-    display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, 1);
-	    
-	/*int i = 0;
-	for (i = 0x80; i < 0x7f; i++)
-	{
-		display.setTextWrap(true);
-		display.print((char)i);		
-	}*/
+    if (timeinfo.tm_hour > 23)
+    {
+        if (Datum)
+            display.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+        else
+            display.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);        
 
-	display.setFont(&FreeSans12pt7b);
-	display.setCursor(14 , 19);
-	display.printf(Template[actValue],Values[actValue]);
-	     
-	display.setFont(&FreeSansBold24pt7b);
-    display.setCursor(4, 55);
-    if (!Datum)
-    {		
-        display.println(&timeinfo,"%H:%M");
+        display.display();
+        if (0 == timeinfo.tm_min % 5)
+        {
+            Serial.println("Anti Einbrenn OLED Modus");
+            Datum = !Datum;
+        }
     }
     else
     {
-        display.println(&timeinfo, "%d.%m");
-    }
-    display.drawLine(3, 58, timeinfo.tm_sec, 58, 1);
-    display.drawLine(3, 59, timeinfo.tm_sec, 59, 1);
-    display.drawLine(3, 60, timeinfo.tm_sec, 60, 1);    
+        display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, 1);
 
-    display.display();
-
-	if (0 == timeinfo.tm_sec % 5)
-	{
-        if (autofarbe.checked)
+        /*int i = 0;
+        for (i = 0x80; i < 0x7f; i++)
         {
-            ws2812fx.setColor(HSVtoRGB(Hue, 255, 255));
-            Hue++;
-            if (360 == Hue)
-                Hue = 0;
-        }
+            display.setTextWrap(true);
+            display.print((char)i);
+        }*/
 
-		Datum = !Datum;
-		actValue++;
-		if (3 == actValue)
-			actValue = 0;
-	}
+        display.setFont(&FreeSans12pt7b);
+        display.setCursor(14, 19);
+        display.printf(Template[actValue], Values[actValue]);
+
+        display.setFont(&FreeSansBold24pt7b);
+        display.setCursor(4, 55);
+        if (!Datum)
+        {
+            display.println(&timeinfo, "%H:%M");
+        }
+        else
+        {
+            display.println(&timeinfo, "%d.%m");
+        }
+        display.drawLine(3, 58, timeinfo.tm_sec, 58, 1);
+        display.drawLine(3, 59, timeinfo.tm_sec, 59, 1);
+        display.drawLine(3, 60, timeinfo.tm_sec, 60, 1);
+
+        display.display();
+
+        if (0 == timeinfo.tm_sec % 5)
+        {
+            if (autofarbe.checked)
+            {
+                ws2812fx.setColor(HSVtoRGB(Hue, 255, 255));
+                Hue++;
+                if (360 == Hue)
+                    Hue = 0;
+            }
+
+            Datum = !Datum;
+            actValue++;
+            if (3 == actValue)
+                actValue = 0;
+        }
+    }
 
     for (int i = 0;i < 700;i++)
     {
